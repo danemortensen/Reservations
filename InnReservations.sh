@@ -1,2 +1,2 @@
-javac InnReservations.java
-java InnReservations
+javac *.java
+java -cp lib/*: InnReservations

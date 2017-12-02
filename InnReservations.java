@@ -1,11 +1,8 @@
 /* Lab 8 - Inn Reservations
  * Dane Mortensen and Kartik Mendiratta */
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
+import java.io.*;
+import java.sql.*;
 
 public class InnReservations {
     private static final String settings = "ServerSettings.txt";
@@ -35,6 +32,8 @@ public class InnReservations {
 
         return conn;
     }
+
+
 
     public static void main(String args[]) {
         Connection conn = null;
