@@ -51,10 +51,10 @@ public class Admin extends User {
 
     public void displayReservations() {
         try {
-            String query = "SELECT * FROM rooms;";
+            String query = "SELECT * FROM reservations;";
             ResultSet res = conn.createStatement().executeQuery(query);
 
-            System.out.println("CODE\tRoom\tCheckIn\tCheckOut\tRate\t"
+            System.out.println("\nCODE\tRoom\tCheckIn\tCheckOut\tRate\t"
                     + "LastName\tFirstName\tAdults\tKids");
             while (res.next()) {
                 String code = res.getString("CODE");
@@ -77,10 +77,10 @@ public class Admin extends User {
 
     public void displayRooms() {
         try {
-            String query = "SELECT * FROM reservations;";
+            String query = "SELECT * FROM rooms;";
             ResultSet res = conn.createStatement().executeQuery(query);
 
-            System.out.println("roomCode\troomName\tbeds\tbedType\tmaxOcc\t"
+            System.out.println("\nroomCode\troomName\tbeds\tbedType\tmaxOcc\t"
                     + "basePrice\tdecor");
             while (res.next()) {
                 String roomCode = res.getString(1);

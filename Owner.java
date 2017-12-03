@@ -6,8 +6,7 @@ import java.sql.Statement;
 public class Owner {
     private Connection conn;
 
-    public Owner(Connection conn)
-    {
+    public Owner(Connection conn) {
         this.conn = conn;
     }
 
@@ -156,13 +155,11 @@ public class Owner {
     public void print(ResultSet r) {
         try {
             ResultSetMetaData rsmd = r.getMetaData();
-            boolean f; 
-
-   	  		while (f=r.next()) {
-   	  			for(int i =1;i<=rsmd.getColumnCount();i++)
-   	  				System.out.print(r.getString(i) +"\t");
-   	  			System.out.println("\n");
-   	  		}
+   	        while (r.next()) {
+   	            for(int i =1;i<=rsmd.getColumnCount();i++)
+   	  	            System.out.print(r.getString(i) +"\t");
+   	            System.out.println("\n");
+   	  	    }
         } catch(Exception ex) {
             System.out.println("print out err: " + ex);
         }
