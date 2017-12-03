@@ -404,5 +404,8 @@ public class Guest extends User {
         return date.getDayOfWeek() == DayOfWeek.SATURDAY ||
             date.getDayOfWeek() == DayOfWeek.SUNDAY;
 
+
+    }
+
     public void prompt() {}
 }
