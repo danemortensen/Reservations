@@ -4,8 +4,10 @@ import java.util.Scanner;
 import java.util.Date;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.DayOfWeek;
 import java.text.SimpleDateFormat;
 import java.text.ParseException;
+import java.time.temporal.ChronoUnit;
 
 public class Guest extends User {
 
@@ -19,10 +21,19 @@ public class Guest extends User {
         "SELECT RoomName, Beds, bedType, maxOcc, basePrice, decor " +
         "FROM rooms WHERE RoomCode = ";
 
+    private static final String getBasePriceQuery =
+        "SELECT basePrice FROM rooms WHERE RoomCode = ";
+
+    private static final String getRoomsQuery =
+        "SELECT RoomCode FROM rooms;";
+
+    private static final String getRoomNameAndPriceQuery =
+        "SELECT RoomName, BasePrice FROM rooms WHERE RoomCode = ";
+
     private Connection conn;
     private Scanner scan;
 
-    private static String isRoomAvailableQuery(String roomCode, String date) {
+    private static String isRoomAvailableQuery(String roomCode, LocalDate date) {
 
         StringBuilder sb = new StringBuilder();
         sb.append("SELECT * FROM reservations WHERE RoomCode = Room ");
@@ -36,7 +47,7 @@ public class Guest extends User {
         return sb.toString();
 
     }
-    
+ 
     public Guest(Connection conn) {
 
         this.conn = conn;
@@ -76,7 +87,7 @@ public class Guest extends User {
         }
     }
 
-    public boolean showRoomDetails(String roomCode) {
+    public int showRoomDetails(String roomCode) {
     
         String query = showRoomDetailsQuery + roomCode + ";";
 
@@ -88,25 +99,25 @@ public class Guest extends User {
 
             if (b) {
 
-               String roomName = result.getString(1);
-               String beds = result.getString(2);
-               String bedType = result.getString(3);
-               String maxOcc = result.getString(4);
-               String basePrice = result.getString(5);
-               String decor = result.getString(6);
-               System.out.println(roomCode + "\t" + roomName);
-               System.out.println("Number of bed(s): " + beds);
-               System.out.println("Type of bed(s): " + bedType);
-               System.out.println("Max occupancy: " + maxOcc);
-               System.out.println("Base price: " + basePrice);
-               System.out.println("Decor: " + decor);
-               System.out.println("\n[C]heck Availability or [R]eturn");
-               return true;
+                String roomName = result.getString(1);
+                String beds = result.getString(2);
+                String bedType = result.getString(3);
+                String maxOcc = result.getString(4);
+                String basePrice = result.getString(5);
+                String decor = result.getString(6);
+                System.out.println(roomCode + "\t" + roomName);
+                System.out.println("Number of bed(s): " + beds);
+                System.out.println("Type of bed(s): " + bedType);
+                System.out.println("Max occupancy: " + maxOcc);
+                System.out.println("Base price: " + basePrice);
+                System.out.println("Decor: " + decor);
+                System.out.println("\n[C]heck Availability or [R]eturn");
+                return 0;
 
             } else {
 
                 System.out.println("Room not found");
-                return false;
+                return 1;
             }
 
 
@@ -114,46 +125,232 @@ public class Guest extends User {
             e.printStackTrace();
         }
 
-        return true;
-            
+        return -1;
     }
 
-    public boolean checkRoomAvailability(String roomCode) {
+    public int showRoomDetails2(String roomCode) {
 
-        System.out.print("Enter Check-In Date (YYYY-MM-DD): ");
-        String checkInString = scan.nextLine();
-        Date checkIn = stringToDate(checkInString);
-        
-        if (checkIn == null) {
+        String query = showRoomDetailsQuery + roomCode + ";";
 
-            System.out.println("Invalid date");
-            return false;
+        try {
+            
+            Statement s1 = conn.createStatement();
+            ResultSet result = s1.executeQuery(query);
+            boolean b = result.next();
+
+            if (b) {
+
+                String roomName = result.getString(1);
+                String beds = result.getString(2);
+                String bedType = result.getString(3);
+                String maxOcc = result.getString(4);
+                String basePrice = result.getString(5);
+                String decor = result.getString(6);
+                System.out.println(roomCode + "\t" + roomName);
+                System.out.println("Number of bed(s): " + beds);
+                System.out.println("Type of bed(s): " + bedType);
+                System.out.println("Max occupancy: " + maxOcc);
+                System.out.println("Base price: " + basePrice);
+                System.out.println("Decor: " + decor);
+                System.out.println("\n[P]lace Reservation or [R]eturn");
+                return 0;
+
+            } else {
+
+                System.out.println("Room not found");
+                return 1;
+            }
+
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
-        System.out.print("Enter Check-Out Date (YYYY-MM-DD): ");
-        String checkOutString = scan.nextLine();
-        Date checkOut = stringToDate(checkOutString);
+        return -1;
 
-        if (checkOut == null) {
+    }
 
-            System.out.println("Invalid date");
-            return false;
-        }
+    public int checkRoomAvailability(String roomCode) {
 
-        LocalDate start = getLocalDate(checkIn);
-        LocalDate end = getLocalDate(checkOut);
+        LocalDate[] dates = getDatesFromUser();
+        LocalDate start = dates[0];
+        LocalDate end = dates[1];
+
+        System.out.println("Availability for Room " + roomCode);
+
+
+        boolean occupied = false;
+        double maxMult = 0;
+        double basePrice = getBasePrice(roomCode);
 
         for (LocalDate date = start; date.isBefore(end); date = date.plusDays(1)) {
 
-            System.out.println(date);
+            System.out.print(date + "\t");
+            
+            if (isRoomAvailable(roomCode, date)) {
+                double multiplier = getPriceMultiplier(date);
+                maxMult = multiplier > maxMult ? multiplier : maxMult;
+                int roomPrice = (int) (basePrice * multiplier);
+                System.out.println(roomPrice);
+            } else {
+                System.out.println("Occupied");
+                occupied = true;
+            }
+
 
         }
 
-        return true;
+        if (!occupied) {
+            System.out.println("[P]lace a Reservation or [R]eturn");
+            return (int) (ChronoUnit.DAYS.between(start, end) * maxMult * basePrice);
+        } else {
+            return 0;
+        }
+    }
+
+    public String listAvailableRooms() {
+
+        LocalDate[] dates = getDatesFromUser();
+        LocalDate start = dates[0];
+        LocalDate end = dates[1];
+
+        try {
+
+            Statement s1 = conn.createStatement();
+            ResultSet result = s1.executeQuery(getRoomsQuery);
+            boolean b = result.next();
+
+            while (b) {
+
+                String roomCode = result.getString(1);
+                boolean avail = true;
+                double maxMult = 0;
+
+                for (LocalDate date = start; date.isBefore(end); date = date.plusDays(1)) {
+
+                    if (!isRoomAvailable(roomCode, date)) {
+                        
+                        avail = false;
+                        break;
+
+                    }
+
+                    double mult = getPriceMultiplier(date);
+                    maxMult = mult > maxMult ? mult : maxMult;
+                }
+
+                if (avail) {
+
+                    String query = getRoomNameAndPriceQuery + roomCode + ";";
+                    ResultSet r2 = s1.executeQuery(query);
+
+                    if (r2.next()) {
+
+                        String roomName = r2.getString(1);
+                        double basePrice = Double.parseDouble(result.getString(2));
+                        int nightlyPrice = (int) (basePrice * maxMult);
+                        System.out.println(roomCode + "\t" + roomName + "\t" + nightlyPrice);
+                    }
+                }                
+
+                b = result.next();
+            }
+
+            return scan.nextLine();
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+            return "";
+
+        }
+    }
+
+    private void completeReservation() {
+
+        System.out.print("Enter your last name: ");
+        String lastName = scan.nextLine();
+
+        System.out.print("Enter your first name: ");
+        String firstName = scan.nextLine();
+
+        System.out.print("Enter the number of adults: ");
+        int numAdults = scan.nextInt();
+
+        System.out.print("Enter the number of children: ");
+        int numChildren = scan.nextInt();
+
+        System.out.println("Apply discount:");
+        System.out.println("\tAAA  10% [1]");
+        System.out.println("\tAARP 15% [2]");
+        System.out.println("\tNone     [3]");
+
+        int discount = scan.nextInt();
 
     }
 
-    public boolean isRoomAvailable(String roomCode, String date) {
+    private LocalDate[] getDatesFromUser() {
+        
+        String checkInString = "", checkOutString = "";
+        Date checkIn = null, checkOut = null;
+        
+        do {
+
+            System.out.print("Enter Check-In Date (YYYY-MM-DD): ");
+            checkInString = scan.nextLine();
+            checkIn = stringToDate(checkInString);
+        
+        } while (checkIn == null);
+
+        do {
+        
+            System.out.print("Enter Check-Out Date (YYYY-MM-DD): "); 
+            checkOutString = scan.nextLine();
+            checkOut = stringToDate(checkOutString);
+
+        } while (checkOut == null);
+
+        return new LocalDate[] {getLocalDate(checkIn), getLocalDate(checkOut)};
+    }
+
+    private double getBasePrice(String roomCode) {
+
+        String query = getBasePriceQuery + roomCode + ";";
+
+        try {
+
+            Statement s1 = conn.createStatement();
+            ResultSet result = s1.executeQuery(query);
+            boolean b = result.next();
+
+            if (b) {
+
+                return Double.parseDouble(result.getString(1));
+
+            } else {
+
+                return -1;
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return -1;
+    }
+
+    private double getPriceMultiplier(LocalDate date) {
+
+        if (isHoliday(date)) {
+            return 1.25;
+        } else if (isWeekend(date)) {
+            return 1.1;
+        } else {
+            return 1;
+        }
+    }
+
+    private boolean isRoomAvailable(String roomCode, LocalDate date) {
 
         String query = isRoomAvailableQuery(roomCode, date);
 
@@ -195,13 +392,16 @@ public class Guest extends User {
         }
     }
 
-    public static void roomRates() {
-        
+    private static boolean isHoliday(LocalDate date) {
+        return
+            (date.getMonthValue() == 1 && date.getDayOfMonth() == 1) ||
+            (date.getMonthValue() == 7 && date.getDayOfMonth() == 4) ||
+            (date.getMonthValue() == 9 && date.getDayOfMonth() == 6) ||
+            (date.getMonthValue() == 10 && date.getDayOfMonth() == 30);
     }
 
-    public static void main(String[] args) {
-
-        System.out.println(isRoomAvailableQuery("CODE", "2007-11-25"));
-
+    private static boolean isWeekend(LocalDate date) {
+        return date.getDayOfWeek() == DayOfWeek.SATURDAY ||
+            date.getDayOfWeek() == DayOfWeek.SUNDAY;
     }
 }
