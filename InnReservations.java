@@ -3,6 +3,7 @@
 
 import java.io.*;
 import java.sql.*;
+import java.util.*;
 
 public class InnReservations {
     private static final String settings = "ServerSettings.txt";
@@ -99,7 +100,15 @@ public class InnReservations {
     public static void main(String args[]) {
         Connection conn = startup();
         
-        printf("")
+        Scanner s = new Scanner(System.in);
+        System.out.print("Enter a user mode or quit "
+                + "(admin | owner | guest | quit): ");
+        String mode = s.nextString();
+        while (mode != quit) {
+            System.out.print("Enter a user mode or quit "
+                    + "(admin | owner | guest | quit): ");
+            String mode = s.getLine();
+        }
 
         System.out.print("closing connection... ");
         try {
