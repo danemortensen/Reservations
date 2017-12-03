@@ -116,7 +116,7 @@ public class InnReservations {
             switch (mode) {
                 case "admin":
                     u = new Admin(conn);
-                    u.prompt(conn);
+                    u.prompt();
                     break;
                 case "owner":
                     break;

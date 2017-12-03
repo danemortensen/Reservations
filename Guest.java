@@ -199,7 +199,7 @@ public class Guest extends User {
         
     }
 
-    public void prompt(Connection conn) {}
+    public void prompt() {}
 
     public static void main(String[] args) {
 
