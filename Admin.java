@@ -141,7 +141,6 @@ public class Admin extends User {
         try {
             DatabaseMetaData meta = conn.getMetaData();
             ResultSet rooms = meta.getTables(null, null, table, null);
-            System.out.print("checking rooms... ");
             if (!rooms.next()) {
                 if (table.equals("rooms")) {
                     create = "CREATE TABLE rooms "
