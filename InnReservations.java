@@ -31,7 +31,9 @@ public class InnReservations {
     }
 
     public static void clearConsole() {
-        new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
+        Console c = System.console();
+        c.writer().print(ESC + "[2J");
+        c.flush();
     }
 
     public static void checkTuples(Connection conn, String table) {
