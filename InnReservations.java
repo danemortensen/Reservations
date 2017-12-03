@@ -31,7 +31,10 @@ public class InnReservations {
     }
 
     public static void clearConsole() {
-        new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
+        final char ESC = 27;
+        Console c = System.console();
+        c.writer().print(ESC + "[2J");
+        c.flush();
     }
 
     public static void checkTuples(Connection conn, String table) {
@@ -103,18 +106,32 @@ public class InnReservations {
 
     public static void main(String args[]) {
         Connection conn = startup();
+        User u = null;
 
         Scanner s = new Scanner(System.in);
         System.out.print("Enter a user mode or quit "
                 + "(admin | owner | guest | quit): ");
-        String mode = s.nextLine();
+        String mode = s.nextLine().trim();
         while (!mode.equals("quit")) {
+            switch (mode) {
+                case "admin":
+                    u = new Admin(conn);
+                    u.prompt(conn);
+                    break;
+                case "owner":
+                    break;
+                case "guest":
+                    break;
+                default:
+                    System.out.println("Invalid user mode");
+                    break;
+            }
             System.out.print("Enter a user mode or quit "
                     + "(admin | owner | guest | quit): ");
             mode = s.nextLine();
         }
 
-        System.out.print("closing connection... ");
+        System.out.print("\nclosing connection... ");
         try {
             conn.close();
         } catch (Exception e) {
