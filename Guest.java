@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import java.sql.*;
 import java.io.*;
 import java.util.Scanner;
@@ -7,13 +6,9 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.text.SimpleDateFormat;
 import java.text.ParseException;
-=======
-import java.util.*;
->>>>>>> b04b87fe61faf940addc801b28ac33dd95dfc451
 
 public class Guest extends User {
 
-<<<<<<< HEAD
     private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
     private static final char ESC = 27;
 
@@ -130,6 +125,9 @@ public class Guest extends User {
             return false;
         }
 
+        LocalDate start = getLocalDate(checkIn);
+        LocalDate end = getLocalDate(checkOut);
+
         return true;
 
     }
@@ -147,9 +145,9 @@ public class Guest extends User {
         } catch (ParseException e) {
             return null;
         }
-=======
+    }
+
     public static void roomRates() {
         
->>>>>>> b04b87fe61faf940addc801b28ac33dd95dfc451
     }
 }
