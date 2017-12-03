@@ -36,13 +36,12 @@ public class Admin extends User {
             res = meta.getTables(null, null, "reservations", null);
             if (res.next()) {
                 System.out.println("reservations exists");
+                System.out.println("\trooms: " + checkTuples("rooms"));
+                System.out.println("\treservations: " 
+                    + checkTuples("reservations"));
             } else {
                 System.out.println("reservations does not exist");
             }
-
-            System.out.println("\trooms: " + checkTuples("rooms"));
-            System.out.println("\treservations: " 
-                    + checkTuples("reservations"));
             System.out.println();
         } catch (Exception e) {
             e.printStackTrace();
@@ -156,7 +155,7 @@ public class Admin extends User {
                         + "FOREIGN KEY (Room) REFERENCES rooms(RoomCode));";
                 }
                 Statement createRooms = conn.createStatement();
-                createRooms.executeQuery(create);
+                createRooms.executeUpdate(create);
             }
             if (populated(table) == 0) {
                 populateTable(table);
