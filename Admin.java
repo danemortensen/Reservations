@@ -25,7 +25,7 @@ public class Admin extends User {
 
     public void currentStatus() {
         try {
-            System.out.println("Current Status:");
+            System.out.println("\nCurrent Status:");
             DatabaseMetaData meta = conn.getMetaData();
             ResultSet res = meta.getTables(null, null, "rooms", null);
             if (res.next()) {
@@ -35,14 +35,15 @@ public class Admin extends User {
             }
             res = meta.getTables(null, null, "reservations", null);
             if (res.next()) {
-                System.out.println("reservations exists, ");
+                System.out.println("reservations exists");
             } else {
-                System.out.println("reservations does not exist, ");
+                System.out.println("reservations does not exist");
             }
 
             System.out.println("\trooms: " + checkTuples("rooms"));
             System.out.println("\treservations: " 
                     + checkTuples("reservations"));
+            System.out.println();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -100,8 +101,8 @@ public class Admin extends User {
 
     public void clearTables() {
         try {
-            conn.createStatement().executeQuery("DELETE FROM reservations");
-            conn.createStatement().executeQuery("DELETE FROM rooms");
+            conn.createStatement().executeUpdate("DELETE FROM reservations");
+            conn.createStatement().executeUpdate("DELETE FROM rooms");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -136,45 +137,55 @@ public class Admin extends User {
     }
 
     public void loadTable(String table) {
+        String create = null;
         try {
             DatabaseMetaData meta = conn.getMetaData();
             ResultSet rooms = meta.getTables(null, null, table, null);
             System.out.print("checking rooms... ");
             if (!rooms.next()) {
-                System.out.print("rooms not found... creating table... ");
-                String roomQuery = "CREATE TABLE rooms "
-                    + "(RoomCode CHAR(5), RoomName VARCHAR(30), Beds INT, "
-                    + "bedType VARCHAR(8), maxOcc INT, basePrice FLOAT, "
-                    + "decor VARCHAR(20), PRIMARY KEY (RoomCode));";
+                if (table.equals("rooms")) {
+                    create = "CREATE TABLE rooms "
+                        + "(RoomCode CHAR(5), RoomName VARCHAR(30), Beds INT, "
+                        + "bedType VARCHAR(8), maxOcc INT, basePrice FLOAT, "
+                        + "decor VARCHAR(20), PRIMARY KEY (RoomCode));";
+                } else if (table.equals("reservations")) {
+                    create = "CREATE TABLE reservations "
+                        + "(CODE INT, Room CHAR(5), CheckIn DATE,"
+                        + "CheckOut DATE, Rate FLOAT, LastName VARCHAR(15), "
+                        + "FirstName VARCHAR(15), Adults INT, Kids INT, "
+                        + "PRIMARY KEY (CODE), "
+                        + "FOREIGN KEY (Room) REFERENCES rooms(RoomCode));";
+                }
                 Statement createRooms = conn.createStatement();
-                createRooms.executeQuery(roomQuery);
+                createRooms.executeQuery(create);
             }
-            if (populated("rooms") > 0) {
-                populateTable("rooms");
-            }
-            if (populated("reservations") > 0) {
-                populateTable("reservations");
+            if (populated(table) == 0) {
+                populateTable(table);
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
-/*
+
     public static void removeTables(Connection conn) {
         String dropReservations = "DROP TABLE IF EXISTS reservations;";
         String dropRooms = "DROP TABLE IF EXISTS rooms;";
 
         try {
-            conn.createStatement.
+            conn.createStatement().executeUpdate(dropReservations);
+            conn.createStatement().executeUpdate(dropRooms);
+            System.out.println("Tables successfully dropped");
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
-*/
+
     public void prompt() {
         String table = null;
         Scanner s = new Scanner(System.in);
-        System.out.print("[admin] Enter a command (display | clear | load): ");
+        currentStatus();
+        System.out.print("[admin] Enter a command "
+                + "(display | clear | load | remove | switch): ");
         String cmd = s.nextLine();
         while (cmd != "return") {
             switch (cmd) {
@@ -202,12 +213,17 @@ public class Admin extends User {
                     loadTable(table);
                     break;
                 case "remove":
+                    removeTables(conn);
                     break;
+                case "switch":
+                    return;
                 default:
                     System.out.println("Invalid command");
                     break;
             }
-            System.out.print("[admin] Enter a command: ");
+            currentStatus();
+            System.out.print("[admin] Enter a command "
+                + "(display | clear | load | remove | switch): ");
             cmd = s.nextLine();
         }
     }

@@ -68,7 +68,7 @@ public class InnReservations {
                     + "bedType VARCHAR(8), maxOcc INT, basePrice FLOAT, "
                     + "decor VARCHAR(20), PRIMARY KEY (RoomCode));";
                 Statement createRooms = conn.createStatement();
-                createRooms.executeQuery(roomQuery);
+                createRooms.executeUpdate(roomQuery);
             }
             checkTuples(conn, "rooms");
 
@@ -86,7 +86,7 @@ public class InnReservations {
                     + "PRIMARY KEY (CODE), "
                     + "FOREIGN KEY (Room) REFERENCES rooms(RoomCode));";
                 Statement createRes = conn.createStatement();
-                createRes.executeQuery(resQuery);
+                createRes.executeUpdate(resQuery);
             }
             checkTuples(conn, "reservations");
         } catch (Exception e) {
