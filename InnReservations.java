@@ -103,11 +103,11 @@ public class InnReservations {
         Scanner s = new Scanner(System.in);
         System.out.print("Enter a user mode or quit "
                 + "(admin | owner | guest | quit): ");
-        String mode = s.nextString();
-        while (mode != quit) {
+        String mode = s.nextLine();
+        while (!mode.equals("quit")) {
             System.out.print("Enter a user mode or quit "
                     + "(admin | owner | guest | quit): ");
-            String mode = s.getLine();
+            mode = s.nextLine();
         }
 
         System.out.print("closing connection... ");
