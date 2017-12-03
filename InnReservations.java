@@ -30,6 +30,10 @@ public class InnReservations {
         return conn;
     }
 
+    public static void clearConsole() {
+        new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
+    }
+
     public static void checkTuples(Connection conn, String table) {
         try {
             String countQuery = "SELECT COUNT(*) FROM " + table + ";";
@@ -99,7 +103,7 @@ public class InnReservations {
 
     public static void main(String args[]) {
         Connection conn = startup();
-        
+
         Scanner s = new Scanner(System.in);
         System.out.print("Enter a user mode or quit "
                 + "(admin | owner | guest | quit): ");
