@@ -199,6 +199,8 @@ public class Guest extends User {
         
     }
 
+    public void prompt(Connection conn) {}
+
     public static void main(String[] args) {
 
         System.out.println(isRoomAvailableQuery("CODE", "2007-11-25"));
