@@ -18,9 +18,24 @@ public class Guest extends User {
     private static final String showRoomDetailsQuery =
         "SELECT RoomName, Beds, bedType, maxOcc, basePrice, decor " +
         "FROM rooms WHERE RoomCode = ";
-    
+
     private Connection conn;
     private Scanner scan;
+
+    private static String isRoomAvailableQuery(String roomCode, String date) {
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("SELECT * FROM reservations WHERE RoomCode = Room ");
+        sb.append("AND Room = ");
+        sb.append(roomCode);
+        sb.append(" AND CheckIn <= \"");
+        sb.append(date);
+        sb.append("\" AND Checkout > \"");
+        sb.append(date);
+        sb.append("\";");
+        return sb.toString();
+
+    }
     
     public Guest(Connection conn) {
 
@@ -128,17 +143,50 @@ public class Guest extends User {
         LocalDate start = getLocalDate(checkIn);
         LocalDate end = getLocalDate(checkOut);
 
+        for (LocalDate date = start; date.isBefore(end); date = date.plusDays(1)) {
+
+            System.out.println(date);
+
+        }
+
         return true;
 
     }
 
-    private LocalDate getLocalDate(Date d) {
+    public boolean isRoomAvailable(String roomCode, String date) {
+
+        String query = isRoomAvailableQuery(roomCode, date);
+
+        try {
+                
+            Statement s1 = conn.createStatement();
+            ResultSet result = s1.executeQuery(query);
+            boolean b = result.next();
+
+            if (b) {
+
+                return false;                
+
+            } else {
+
+                return true;
+            }
+
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+
+    private static LocalDate getLocalDate(Date d) {
 
         return d.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
 
     }
 
-    private Date stringToDate(String str) {
+    private static Date stringToDate(String str) {
 
         try {
             return dateFormat.parse(str);
@@ -149,5 +197,11 @@ public class Guest extends User {
 
     public static void roomRates() {
         
+    }
+
+    public static void main(String[] args) {
+
+        System.out.println(isRoomAvailableQuery("CODE", "2007-11-25"));
+
     }
 }
