@@ -201,6 +201,20 @@ public class Owner extends User {
         
     }
 
+    public void print(ResultSet rs) {
+        try {
+            int columns = rs.getMetaData().getColumnCount();
+   	        while (rs.next()) {
+                for(int i = 1; i <= columns; i++) {
+   	  	            System.out.print(rs.getString(i) +"\t");
+                }
+   	            System.out.println("\n");
+   	  	    }
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+    }	
+
     private void reviewReservations() {
         Scanner s = new Scanner(System.in);
         System.out.print("Enter a start date (yyyy-mm-dd): ");
@@ -287,16 +301,5 @@ public class Owner extends User {
         }
     }
 
-    public void print(ResultSet r) {
-        try {
-            ResultSetMetaData rsmd = r.getMetaData();
-   	        while (r.next()) {
-   	            for(int i =1;i<=rsmd.getColumnCount();i++)
-   	  	            System.out.print(r.getString(i) +"\t");
-   	            System.out.println("\n");
-   	  	    }
-        } catch(Exception ex) {
-            System.out.println("print out err: " + ex);
-        }
-    }	
+
 }
