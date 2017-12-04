@@ -18,39 +18,65 @@ public class Guest extends User {
     private static final char ESC = 27;
 
     private static final String listRoomsQuery =
-        "SELECT RoomCode, RoomName, BasePrice FROM rooms;";
+        "SELECT RoomCode, RoomName, basePrice FROM rooms;";
 
     private static final String showRoomDetailsQuery =
         "SELECT RoomName, Beds, bedType, maxOcc, basePrice, decor " +
-        "FROM rooms WHERE RoomCode = ";
+        "FROM rooms WHERE RoomCode = \"";
 
     private static final String getBasePriceQuery =
-        "SELECT basePrice FROM rooms WHERE RoomCode = ";
+        "SELECT basePrice FROM rooms WHERE RoomCode = \"";
 
     private static final String getRoomsQuery =
         "SELECT RoomCode FROM rooms;";
 
     private static final String getRoomNameAndPriceQuery =
-        "SELECT RoomName, BasePrice FROM rooms WHERE RoomCode = ";
+        "SELECT RoomName, basePrice FROM rooms WHERE RoomCode = \"";
+
+    private static final String getExistingCodesQuery =
+        "SELECT CODE FROM reservations;";
 
     private Connection conn;
     private Scanner scan;
 
     private ArrayList<String> myRoomsAndPrices = new ArrayList<String>();
+    private ArrayList<Integer> existingCodes = null;
 
     private LocalDate chosenStart = null;
     private LocalDate chosenEnd = null;
     private int chosenPrice = 0;
 
+    private void getExistingCodes() {
+
+        try {
+
+            Statement s1 = conn.createStatement();
+            ResultSet r = s1.executeQuery(getExistingCodesQuery);
+            existingCodes = new ArrayList<Integer>();
+            boolean b = r.next();
+
+            while (b) {
+
+                int i = r.getInt(1);
+                existingCodes.add(i);
+                b = r.next();
+
+            }
+        } catch (Exception e) {
+
+            e.printStackTrace();
+
+        }
+    }
+
     private static String isRoomAvailableQuery(String roomCode, LocalDate date) {
 
         StringBuilder sb = new StringBuilder();
-        sb.append("SELECT * FROM reservations WHERE RoomCode = Room ");
-        sb.append("AND Room = ");
+        sb.append("SELECT * FROM reservations WHERE Room = \"");
         sb.append(roomCode);
-        sb.append(" AND CheckIn <= \"");
+        sb.append("\" AND CheckIn <= \"");
         sb.append(date);
-        sb.append("\" AND Checkout > \"");
+        sb.append("\" AND CheckOut > \"");
         sb.append(date);
         sb.append("\";");
         return sb.toString();
@@ -75,7 +101,7 @@ public class Guest extends User {
 
             Statement s1 = conn.createStatement();
             ResultSet result = s1.executeQuery(listRoomsQuery);
-            System.out.println("Room List:");
+            System.out.println("\nRoom List:");
             boolean b = result.next();
 
             while (b) {
@@ -87,7 +113,7 @@ public class Guest extends User {
 
             }
 
-            System.out.println("Enter Room Code");
+            System.out.print("\nEnter Room Code: ");
 
         } catch (Exception e) {
         
@@ -98,7 +124,7 @@ public class Guest extends User {
 
     public int showRoomDetails(String roomCode) {
     
-        String query = showRoomDetailsQuery + roomCode + ";";
+        String query = showRoomDetailsQuery + roomCode + "\";";
 
         try {
             
@@ -114,18 +140,19 @@ public class Guest extends User {
                 String maxOcc = result.getString(4);
                 String basePrice = result.getString(5);
                 String decor = result.getString(6);
-                System.out.println(roomCode + "\t" + roomName);
+                System.out.println("\nRoom code: " + roomCode);
+                System.out.println("Room name: " + roomName);
                 System.out.println("Number of bed(s): " + beds);
                 System.out.println("Type of bed(s): " + bedType);
                 System.out.println("Max occupancy: " + maxOcc);
                 System.out.println("Base price: " + basePrice);
                 System.out.println("Decor: " + decor);
-                System.out.println("\n[C]heck Availability");
+                System.out.print("\n[C]heck Availability: ");
                 return 0;
 
             } else {
 
-                System.out.println("Room not found");
+                System.out.println("\nRoom not found!\n");
                 return 1;
             }
 
@@ -139,7 +166,7 @@ public class Guest extends User {
 
     public int showRoomDetails2(String roomCode) {
 
-        String query = showRoomDetailsQuery + roomCode + ";";
+        String query = showRoomDetailsQuery + roomCode + "\";";
 
         try {
             
@@ -155,19 +182,19 @@ public class Guest extends User {
                 String maxOcc = result.getString(4);
                 String basePrice = result.getString(5);
                 String decor = result.getString(6);
-                System.out.println(roomCode + "\t" + roomName);
+                System.out.println("\nRoom code: " + roomCode);
+                System.out.println("Room name: " + roomName);
                 System.out.println("Number of bed(s): " + beds);
                 System.out.println("Type of bed(s): " + bedType);
                 System.out.println("Max occupancy: " + maxOcc);
                 System.out.println("Base price: " + basePrice);
                 System.out.println("Decor: " + decor);
-                System.out.println("\n[M]ake a Reservation: ");
-                scan.nextLine();
+                System.out.print("\n[M]ake a Reservation: ");
                 return 0;
 
             } else {
 
-                System.out.println("Room not found");
+                System.out.println("\nRoom not found!\n");
                 return 1;
             }
 
@@ -186,7 +213,7 @@ public class Guest extends User {
         LocalDate start = dates[0];
         LocalDate end = dates[1];
 
-        System.out.println("Availability for Room " + roomCode);
+        System.out.println("\nAvailability for Room " + roomCode + ":\n");
 
         boolean occupied = false;
         double maxMult = 0;
@@ -208,7 +235,7 @@ public class Guest extends User {
         }
 
         if (!occupied) {
-            System.out.println("[P]lace a Reservation: ");
+            System.out.print("\n[P]lace a Reservation: ");
             chosenStart = start;
             chosenEnd = end;
             return (int) (maxMult * basePrice);
@@ -219,7 +246,9 @@ public class Guest extends User {
 
     public String listAvailableRooms() {
 
+        System.out.println();
         LocalDate[] dates = getDatesFromUser();
+        System.out.println();
         LocalDate start = dates[0];
         LocalDate end = dates[1];
 
@@ -255,13 +284,14 @@ public class Guest extends User {
 
                 if (avail) {
 
-                    String query = getRoomNameAndPriceQuery + roomCode + ";";
-                    ResultSet r2 = s1.executeQuery(query);
+                    Statement s2 = conn.createStatement();
+                    String query = getRoomNameAndPriceQuery + roomCode + "\";";
+                    ResultSet r2 = s2.executeQuery(query);
 
                     if (r2.next()) {
 
                         String roomName = r2.getString(1);
-                        double basePrice = Double.parseDouble(result.getString(2));
+                        double basePrice = Double.parseDouble(r2.getString(2));
                         int nightlyPrice = (int) (basePrice * maxMult);
                         myRoomsAndPrices.add(roomCode);
                         myRoomsAndPrices.add(nightlyPrice + "");
@@ -272,6 +302,7 @@ public class Guest extends User {
                 b = result.next();
             }
 
+            System.out.print("\nEnter Room Code: ");
             return scan.nextLine();
 
         } catch (Exception e) {
@@ -284,35 +315,63 @@ public class Guest extends User {
 
     private void completeReservation(String roomCode, LocalDate start, LocalDate end, int rate) {
 
-        System.out.print("Enter your last name: ");
+        System.out.print("\nEnter your last name: ");
         String lastName = scan.nextLine();
 
         System.out.print("Enter your first name: ");
         String firstName = scan.nextLine();
 
-        System.out.print("Enter the number of adults: ");
-        int numAdults = scan.nextInt();
+        int numAdults = -1;
+        int numChildren = -1;
 
-        System.out.print("Enter the number of children: ");
-        int numChildren = scan.nextInt();
+        do {
 
-        System.out.println("Apply discount:");
-        System.out.println("\tAAA  10% [1]");
-        System.out.println("\tAARP 15% [2]");
-        System.out.println("\tNone     [3]");
+            System.out.print("Enter the number of adults: ");
+            try {
+                numAdults = Integer.parseInt(scan.nextLine());
+            }
 
-        int discount = scan.nextInt();
+            catch (Exception e) {}
+
+        } while (numAdults < 0);
+
+        do {
+
+            System.out.print("Enter the number of children: ");
+            try { numChildren = Integer.parseInt(scan.nextLine()); }
+            catch (Exception e) {}
+
+        } while (numChildren < 0);
+
+        System.out.println("AAA  10% [1]");
+        System.out.println("AARP 15% [2]");
+        System.out.println("None     [3]");
+
+        int discount = 0;
+
+        do {
+
+            System.out.print("Apply discount: ");
+            try { discount = Integer.parseInt(scan.nextLine()); }
+            catch (Exception e) {}
+
+        } while (discount < 1 || discount > 3);
+
         if (discount == 1) rate = (int) (rate * 0.9);
         else if (discount == 2) rate = (int) (rate * 0.85);
 
-        System.out.println("[P]lace Reservation: ");
+        System.out.print("\n[P]lace Reservation: ");
         scan.nextLine();
+        System.out.println();
 
+        if (existingCodes == null) getExistingCodes();
+        while (existingCodes.contains(resCode)) resCode++;
         int myResCode = resCode++;
+        existingCodes.add(myResCode);
         
         try {
 
-            String query = "INSERT INTO reservations VALUES(?,?,?,?,?,?,?,?,?)";
+            String query = "INSERT INTO reservations VALUES(?,?,?,?,?,?,?,?,?);";
             PreparedStatement ps = conn.prepareStatement(query);
             ps.setInt(1, myResCode);
             ps.setString(2, roomCode);
@@ -329,7 +388,7 @@ public class Guest extends User {
             e.printStackTrace();
         }
 
-        System.out.println("Your reservation is complete.");
+        System.out.println("Your reservation is complete.\n");
     }
 
     private LocalDate[] getDatesFromUser() {
@@ -351,14 +410,14 @@ public class Guest extends User {
             checkOutString = scan.nextLine();
             checkOut = stringToDate(checkOutString);
 
-        } while (checkOut == null);
+        } while (checkOut == null || getLocalDate(checkOut).isBefore(getLocalDate(checkIn)));
 
         return new LocalDate[] {getLocalDate(checkIn), getLocalDate(checkOut)};
     }
 
     private double getBasePrice(String roomCode) {
 
-        String query = getBasePriceQuery + roomCode + ";";
+        String query = getBasePriceQuery + roomCode + "\";";
 
         try {
 
@@ -451,18 +510,21 @@ public class Guest extends User {
 
     public void prompt() {
 
-        System.out.println("Rooms and Rates [1]");
+        System.out.println("\nRooms and Rates [1]");
         System.out.println("Reservations    [2]");
         System.out.println("Return to Home  [3]");
+        System.out.print("Select: ");
 
         int input = scan.nextInt();
+        scan.nextLine();
 
         if (input == 1) {
 
             listRooms();
             String roomCode = scan.nextLine();
-            showRoomDetails(roomCode);
+            if (showRoomDetails(roomCode) == 1) return;
             scan.nextLine();
+            System.out.println();
             int nightlyPrice = checkRoomAvailability(roomCode);
 
             if (nightlyPrice == 0) return;
@@ -475,7 +537,7 @@ public class Guest extends User {
         } else if (input == 2) {
 
             String roomCode = listAvailableRooms();
-            showRoomDetails2(roomCode);
+            if (showRoomDetails2(roomCode) == 1) return;
             int myPrice = 0;
 
             for (int i = 0; i < myRoomsAndPrices.size(); i += 2) {
@@ -488,6 +550,7 @@ public class Guest extends User {
 
             }
 
+            scan.nextLine();
             completeReservation(roomCode, chosenStart, chosenEnd, myPrice);
             return;
 

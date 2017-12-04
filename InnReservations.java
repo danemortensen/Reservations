@@ -121,6 +121,8 @@ public class InnReservations {
                 case "owner":
                     break;
                 case "guest":
+                    u = new Guest(conn);
+                    u.prompt();
                     break;
                 default:
                     System.out.println("Invalid user mode");
