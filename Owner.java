@@ -63,6 +63,7 @@ public class Owner extends User {
     
         } else if (choice == 4) {
 
+
             reviewReservations();
 
         } else if (choice == 5) {
@@ -197,14 +198,26 @@ public class Owner extends User {
     }
 
     private void reviewRooms() {
-
-
+        
     }
 
     private void reviewReservations() {
-
-
-
+        Scanner s = new Scanner(System.in);
+        System.out.print("Enter a start date (yyyy-mm-dd): ");
+        String start = s.nextLine();
+        System.out.print("Enter an end date (yyyy-mm-dd): ");
+        String end = s.nextLine();
+        System.out.print("Enter a room code: ");
+        String room = s.nextLine();
+        try {
+            String resCodes = "SELECT * FROM reservations WHERE CheckIn >= '" 
+                + start + "' AND CheckIn <= '" + end + "' AND Room = '"
+                + room + "';";
+            ResultSet res = conn.createStatement().executeQuery(resCodes);
+            print(res);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void detailedReservations() {
