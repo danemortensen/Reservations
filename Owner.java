@@ -1,93 +1,215 @@
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.Statement;
+import java.sql.*;
+import java.io.*;
+import java.util.Scanner;
+import java.util.Date;
+import java.time.LocalDate;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.ZoneId;
 
-public class Owner {
-    private Connection conn;
+public class Owner extends User {
+    Connection conn;
+    Scanner scan;
+
+    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+
+    private static final String viewDateQuery =
+        "SELECT RoomName, RoomCode, (CASE WHEN SUM(CASE WHEN CheckIn <= ?" +
+        " AND CheckOut > ? THEN 1 ELSE 0 END) = 0 THEN \"Empty\" ELSE \"Occupied\" END)" +
+        " AS OccupationStatus FROM rooms, reservations WHERE RoomCode = Room" + 
+        " GROUP BY RoomCode ORDER BY RoomCode;";
 
     public Owner(Connection conn) {
         this.conn = conn;
+        this.scan = new Scanner(System.in);
     }
 
-    public void occupancy(String date) {
+    public String getType() {
+
+        return "OWNER";
+
+    }
+
+    private static LocalDate getLocalDate(Date d) {
+
+        return d.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+
+    }
+
+    private static Date stringToDate(String str) {
+
         try {
-   	  		Statement s = conn.createStatement();       
-   	  		ResultSet result = s.executeQuery("select rm.roomName, rm.roomId, (case " + 
-   	  				"when sum(case when checkin <= '" + date + 
-   	  				"' and " + 
-   	  				"checkout > '" + date+ "' then 1 else 0 end) = 1 " + 
-   	  				"then 'Occupied' else 'Empty' end) as Status " + 
-   	  				"from INN_RESERVATIONS rv, INN_Rooms rm " + 
-   	  				"where rm.roomId = rv.Room " + 
-   	  				"group by rv.Room " + 
-   	  				"order by rm.roomId;");
-   	  		print(result);
+            return dateFormat.parse(str);
+        } catch (ParseException e) {
+            return null;
+        }
+    }
+
+    public void prompt() {
+
+        int choice = getSelectedFunctionality();
+
+        if (choice == 1) {
+
+            occupancyOverview();
+
+        } else if (choice == 2) {
+
+            viewRevenue();
+
+        } else if (choice == 3) {
+
+            reviewRooms();
+    
+        } else if (choice == 4) {
+
+            reviewReservations();
+
+        } else if (choice == 5) {
+
+            detailedReservations();
+
+        } else {
+
+            return;
+        }
+    }
+
+    private int getSelectedFunctionality() {
+
+        System.out.println("Occupancy Overview    [1]");
+        System.out.println("View Revenue          [2]");
+        System.out.println("Review Rooms          [3]");
+        System.out.println("Review Reservations   [4]");
+        System.out.println("Detailed Reservations [5]");
+        System.out.println("Return                [6]");
+
+        int choice = 0;
+
+        do {
+
+            System.out.print("\nSelect: ");
+
+            try {
+
+                choice = Integer.parseInt(scan.nextLine());
+
+            } catch (Exception e) {}
+
+        } while (choice < 1 || choice > 6);
+
+        System.out.println();
+        return choice;
+    }
+
+    private LocalDate getDateFromUser(String prompt) {
+        
+        String dateString = "";
+        Date date = null;
+        
+        do {
+
+            System.out.print(prompt + ": ");
+            dateString = scan.nextLine();
+            date = stringToDate(dateString);
+        
+        } while (date == null);
+
+        return getLocalDate(date);
+    }
+
+    private void occupancyOverview() {
+
+        System.out.println("View Date  [1]");
+        System.out.println("View Range [2]");
+
+        int choice = 0;
+
+        do {
+
+            System.out.print("\nSelect: ");
+
+            try {
+
+                choice = Integer.parseInt(scan.nextLine());
+
+            } catch (Exception e) {}
+
+        } while (choice < 1 || choice > 2);
+
+        System.out.println();
+        
+        if (choice == 1) {
+
+            LocalDate ld = getDateFromUser("Enter Date (YYYY-MM-DD)");
+            viewDate(ld);
+
+        } else {
+
+            LocalDate start = getDateFromUser("Enter Start Date (YYYY-MM-DD)");
+            LocalDate end = null;
+
+            while (end == null || end.isBefore(start)) {
+
+                end = getDateFromUser("Enter End Date (YYYY-MM-DD)");
+
+            }
+
+            viewRange(start, end);
+        }
+    }
+
+    private void viewDate(LocalDate date) {
+
+        try {
+            PreparedStatement ps = conn.prepareStatement(viewDateQuery);
+            ps.setString(1, date.toString());
+            ps.setString(2, date.toString());
+            ResultSet rs = ps.executeQuery();
+            boolean b = rs.next();
+
+            while (b) {
+
+                String roomName = rs.getString(1);
+                String roomCode = rs.getString(2);
+                String occupiedState = rs.getString(3);
+
+                System.out.println(roomName + "\t" + roomCode + "\t" + occupiedState + "\t");
+
+                b = rs.next();
+            }
+
         } catch (Exception e) {
+
             e.printStackTrace();
+
         }
     }
 
-    public void occupancy(String start, String end) {
-        try {
-            Statement s = conn.createStatement();       
-            ResultSet result = s.executeQuery("select Room, (case when count(*) = 0 then 'Empty' "
-   	  				+ "when datediff('"+end+"','"+start+"') <= sum(case when(checkout > '"+end+"' and checkin <= '"+start+"') then datediff('"+end+"', checkin) "
-   	  				+ "when (checkout <= '"+end+"' and checkin >= '"+start+"') then datediff(checkout, checkin) "
-   	  				+ "when (checkout > '"+end+"' and checkin < '"+start+"') then datediff('"+end+"', '"+start+"') end) then 'Full' else 'Partial' end) as occupancy "
-   	  				+ "from INN_RESERVATIONS where checkout > '"+start+"' and checkin <= '"+end+"' group by Room;");
-   	  		print(result);
-        } catch (Exception ex) {
-            System.out.println("Two date occupancy error: " + ex);
-        }
+    private void viewRange(LocalDate start, LocalDate end) {
+
+    
+
     }
 
-    public void revenue(){
-        try {
-            Statement s = conn.createStatement();       
-   	  		ResultSet rev = s.executeQuery("select room, sum(case when monthname(checkout) = 'January' then Rate*(datediff(checkout,checkin)) else 0 end) as Jan, " +
-   	  				"sum(case when monthname(checkout) = 'February' then Rate*(datediff(checkout,checkin)) else 0 end) as Feb, " +
-   	  				"sum(case when monthname(checkout) = 'March' then Rate*(datediff(checkout,checkin)) else 0 end) as Mar, " +
-   	  				"sum(case when monthname(checkout) = 'April' then Rate*(datediff(checkout,checkin)) else 0 end) as Apr, " +
-   	  				"sum(case when monthname(checkout) = 'May' then Rate*(datediff(checkout,checkin)) else 0 end) as May, " +
-   	  				"sum(case when monthname(checkout) = 'June' then Rate*(datediff(checkout,checkin)) else 0 end) as June, " +
-   	  				"sum(case when monthname(checkout) = 'July' then Rate*(datediff(checkout,checkin)) else 0 end) as July, " +
-   	  				"sum(case when monthname(checkout) = 'August' then Rate*(datediff(checkout,checkin)) else 0 end) as Aug, " +
-   	  				"sum(case when monthname(checkout) = 'September' then Rate*(datediff(checkout,checkin)) else 0 end) as Sept, " +
-   	  				"sum(case when monthname(checkout) = 'October' then Rate*(datediff(checkout,checkin)) else 0 end) as Oct, " +
-   	  				"sum(case when monthname(checkout) = 'November' then Rate*(datediff(checkout,checkin)) else 0 end) as Nov, " +
-   	  				"sum(case when monthname(checkout) = 'December' then Rate*(datediff(checkout,checkin)) else 0 end) as Dece, " +
-   	  				"sum(case when year(checkout) = 2010 then Rate*(datediff(checkout,checkin)) else 0 end) as Total from INN_RESERVATIONS group by Room "
-   	  				+ "union "
-   	  				+ "select 'Total' as Room, sum(Jan) as Jan, sum(Feb) as Feb, sum(Mar) as Mar, sum(Apr) as Apr, sum(May) as May, sum(June) as June, sum(July) as July, sum(Aug) as Aug, sum(Sept) as Sept, sum(Oct) as Oct, sum(Nov) as Nov, sum(Dece) as Dece, sum(Total) as Total "
-   	  				+ "from (select room, sum(case when monthname(checkout) = 'January' then Rate*(datediff(checkout,checkin)) else 0 end) as Jan, " + 
-   	  				"sum(case when monthname(checkout) = 'February' then Rate*(datediff(checkout,checkin)) else 0 end) as Feb, " + 
-   	  				"sum(case when monthname(checkout) = 'March' then Rate*(datediff(checkout,checkin)) else 0 end) as Mar, " + 
-   	  				"sum(case when monthname(checkout) = 'April' then Rate*(datediff(checkout,checkin)) else 0 end) as Apr, " + 
-   	  				"sum(case when monthname(checkout) = 'May' then Rate*(datediff(checkout,checkin)) else 0 end) as May, " + 
-   	  				"sum(case when monthname(checkout) = 'June' then Rate*(datediff(checkout,checkin)) else 0 end) as June, " + 
-   	  				"sum(case when monthname(checkout) = 'July' then Rate*(datediff(checkout,checkin)) else 0 end) as July, " + 
-   	  				"sum(case when monthname(checkout) = 'August' then Rate*(datediff(checkout,checkin)) else 0 end) as Aug, " + 
-   	  				"sum(case when monthname(checkout) = 'September' then Rate*(datediff(checkout,checkin)) else 0 end) as Sept, " + 
-   	  				"sum(case when monthname(checkout) = 'October' then Rate*(datediff(checkout,checkin)) else 0 end) as Oct, " + 
-   	  				"sum(case when monthname(checkout) = 'November' then Rate*(datediff(checkout,checkin)) else 0 end) as Nov, " + 
-   	  				"sum(case when monthname(checkout) = 'December' then Rate*(datediff(checkout,checkin)) else 0 end) as Dece, " + 
-   	  				"sum(case when year(checkout) = 2010 then Rate*(datediff(checkout,checkin)) else 0 end) as Total from INN_RESERVATIONS group by Room) as revTbl;");
-   	  		//NEED TO PRINT
-   	  		print(rev);
-        } catch(Exception ex) {
-            System.out.println("revenue error: " + ex);
-        }
+    private void viewRevenue() {
+
     }
 
-    public void reservations(String start, String end) {
-        try {
-            Statement s = conn.createStatement();       
-   	  		ResultSet reservations = s.executeQuery("select Code from INN_RESERVATIONS where checkin >= '" + start + "' and checkin <= '" + end +"';");	
-   	  		print(reservations);
-        } catch(Exception ex) {
-            System.out.println("revenue error: " + ex);
-        }
+    private void reviewRooms() {
+
+
+    }
+
+    private void reviewReservations() {
+
+
+
+    }
+
+    private void detailedReservations() {
+
+
     }
 
     public void reservations(String start, String end, String room) {

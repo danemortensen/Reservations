@@ -119,6 +119,8 @@ public class InnReservations {
                     u.prompt();
                     break;
                 case "owner":
+                    u = new Owner(conn);
+                    u.prompt();
                     break;
                 case "guest":
                     u = new Guest(conn);
